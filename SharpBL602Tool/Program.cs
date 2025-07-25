@@ -57,6 +57,9 @@ namespace BL602Tool
             baud = 230400;
             port = "COM13";
             toWrite = "dump.bin";
+            BL602Flasher f = new BL602Flasher();
+            f.openPort(port, 115200);
+            f.Sync();
             if (bInfo)
             {
                 //BL602Flasher f = new BL602Flasher(port, 115200);
