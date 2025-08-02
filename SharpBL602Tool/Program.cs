@@ -63,6 +63,8 @@ namespace BL602Tool
             f.Sync();
             BLInfo inf = f.getInfo();
             inf.printBootInfo();
+            byte[] loaderBinary = File.ReadAllBytes("eflash_loader_rc32m.bin");
+            f.loadAndRunPreprocessedImage(loaderBinary);
             if (bInfo)
             {
                 //BL602Flasher f = new BL602Flasher(port, 115200);

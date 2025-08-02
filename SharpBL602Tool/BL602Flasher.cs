@@ -28,6 +28,38 @@ class BL602Flasher
         }
         return false;
     }
+    public bool loadAndRunPreprocessedImage(byte [] file)
+    {
+        Console.WriteLine("Sending boot header...");
+        // loadBootHeader
+        this.executeCommand(0x11, file, 0, 176);
+        Console.WriteLine("Sending segment header...");
+        // loadSegmentHeader
+        this.executeCommand(0x17, file, 176, 16);
+        Console.WriteLine("Writing application to RAM...");
+        this.executeCommandChunked(0x18, file, 176+16, -1);
+        Console.WriteLine("Checking...");
+        this.executeCommand(0x19);
+        Console.WriteLine("Jumping...");
+        this.executeCommand(0x1a);
+        return false;
+    }
+    void executeCommandChunked(int type, byte[] parms = null, int start = 0, int len = 0)
+    {
+        if(len == -1)
+        {
+            len = parms.Length - start;
+        }
+        int ofs = 0;
+        while(ofs < len)
+        {
+            int chunk = len - ofs;
+            if (chunk > 4092)
+                chunk = 4092;
+            this.executeCommand(type, parms, start+ofs, chunk);
+            ofs += chunk;
+        }
+    }
     public bool Sync()
     {
         for (int i = 0; i < 1000; i++)
@@ -117,36 +149,35 @@ class BL602Flasher
         _port.Read(r, 0, r.Length);
         return r;
     }
-    byte[] executeCommand(int type, byte [] parms)
+    byte[] executeCommand(int type, byte [] parms = null, int start = 0, int len = 0)
     {
-        int len = 0;
-        if (parms != null)
-        {
-            len = parms.Length;
-        }
         byte[] raw = new byte[] { (byte)type, 1, (byte)(len & 0xFF), (byte)(len >> 8) };
         _port.Write(raw,0,raw.Length);
         if (parms != null)
         {
-            _port.Write(parms, 0, parms.Length);
+            _port.Write(parms, start, len);
         }
         byte[] ret = null;
-        Thread.Sleep(100);
+        Thread.Sleep(500);
         if(_port.BytesToRead >= 2)
         {
             byte[] rep = new byte[2];
             _port.Read(rep, 0, 2);
             if(rep[0] == 'O' && rep[1] == 'K')
             {
+                Console.WriteLine("Command ok!");
                 ret = readFully();
+                return ret;
             }
             else if (rep[0] == 'F' && rep[1] == 'L')
             {
+                Console.WriteLine("Command fail!");
                 ret = readFully();
-                return null;//hack
+                return null;
             }
         }
-        return ret;
+        Console.WriteLine("Command timed out!");
+        return null;
     }
 }
 
