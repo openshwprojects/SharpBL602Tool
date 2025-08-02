@@ -18,8 +18,10 @@ namespace BL602Tool
             bool bErase = false;
             bool bInfo = false;
             bool bTerminal = false;
-            int baud = 460800;
+            int baud = 230400;
             // YModem.test();
+            baud = 230400;
+            toWrite = "dump.bin";
 
             // Erase: SharpBL602Tool.exe -p COM3 -ef
             // Read: SharpBL602Tool.exe -p COM3 -rf 460800 dump.bin
@@ -55,9 +57,6 @@ namespace BL602Tool
                     toRead = args[i];
                 }
             }
-            baud = 230400;
-            port = "COM3";
-            toWrite = "dump.bin";
             BL602Flasher f = new BL602Flasher();
             f.openPort(port, 115200);
             f.Sync();
@@ -65,6 +64,9 @@ namespace BL602Tool
             inf.printBootInfo();
             byte[] loaderBinary = File.ReadAllBytes("eflash_loader_rc32m.bin");
             f.loadAndRunPreprocessedImage(loaderBinary);
+            //resync in eflash
+            f.Sync();
+            f.eraseFlash();
             if (bInfo)
             {
                 //BL602Flasher f = new BL602Flasher(port, 115200);

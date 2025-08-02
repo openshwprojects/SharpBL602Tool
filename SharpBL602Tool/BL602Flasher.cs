@@ -44,6 +44,10 @@ class BL602Flasher
         this.executeCommand(0x1a);
         return false;
     }
+    internal void eraseFlash()
+    {
+        this.executeCommand(0x3C,null,0,0,true, 100);
+    }
     void executeCommandChunked(int type, byte[] parms = null, int start = 0, int len = 0)
     {
         if(len == -1)
@@ -75,6 +79,8 @@ class BL602Flasher
         }
         return false;
     }
+
+
     bool internalSync() { 
         // Flush input buffer
         while (_port.BytesToRead > 0)
@@ -149,16 +155,44 @@ class BL602Flasher
         _port.Read(r, 0, r.Length);
         return r;
     }
-    byte[] executeCommand(int type, byte [] parms = null, int start = 0, int len = 0)
+    byte[] executeCommand(int type, byte [] parms = null, 
+        int start = 0, int len = 0, bool bChecksum = false,
+        float timeout = 0.1f)
     {
-        byte[] raw = new byte[] { (byte)type, 1, (byte)(len & 0xFF), (byte)(len >> 8) };
+        if(len < 0)
+        {
+            len = parms.Length;
+        }
+        byte chksum = 1;
+        if(bChecksum)
+        {
+            chksum = 0;
+            chksum += (byte)(len & 0xFF);
+            chksum += (byte)(len >> 8);
+            for(int i = 0; i < len; i++)
+            {
+                chksum += parms[start+i];
+            }
+            chksum = (byte)(chksum & 0xFF);
+        }
+        byte[] raw = new byte[] { (byte)type, chksum, (byte)(len & 0xFF), (byte)(len >> 8) };
         _port.Write(raw,0,raw.Length);
         if (parms != null)
         {
             _port.Write(parms, start, len);
         }
         byte[] ret = null;
-        Thread.Sleep(500);
+        int timeoutMS = (int)(timeout * 1000);
+        while(timeoutMS > 0)
+        {
+            int step = 500;
+            Thread.Sleep(step);
+            if (_port.BytesToRead >= 2)
+            {
+                break;
+            }
+            timeoutMS -= step;
+        }
         if(_port.BytesToRead >= 2)
         {
             byte[] rep = new byte[2];
