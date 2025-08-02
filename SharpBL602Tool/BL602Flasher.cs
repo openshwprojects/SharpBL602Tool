@@ -48,6 +48,73 @@ class BL602Flasher
     {
         this.executeCommand(0x3C,null,0,0,true, 100);
     }
+    internal byte[] readFlash(int addr = 0, int amount = 4096)
+    {
+        byte[] ret = new byte[amount];
+        Console.Write("Starting read...");
+        while (amount > 0)
+        {
+            int length = 512;
+            if (amount < length)
+                length = amount;
+
+            Console.Write(".");
+
+            byte[] cmdBuffer = new byte[8];
+            cmdBuffer[0] = (byte)(addr & 0xFF);
+            cmdBuffer[1] = (byte)((addr >> 8) & 0xFF);
+            cmdBuffer[2] = (byte)((addr >> 16) & 0xFF);
+            cmdBuffer[3] = (byte)((addr >> 24) & 0xFF);
+            cmdBuffer[4] = (byte)(length & 0xFF);
+            cmdBuffer[5] = (byte)((length >> 8) & 0xFF);
+            cmdBuffer[6] = (byte)((length >> 16) & 0xFF);
+            cmdBuffer[7] = (byte)((length >> 24) & 0xFF);
+
+            // executeCommand returns byte[]: response including at least 2 bytes header + length data
+            byte[] result = this.executeCommand(0x32, cmdBuffer, 0, cmdBuffer.Length, true, 100); // Assuming 0x30 is flash_read cmd code
+
+            if (result == null)
+            {
+                Console.WriteLine("Read fail - no reply");
+                return null;
+            }
+
+            int dataLen = result.Length - 2; 
+            if (dataLen != length)
+            {
+                Console.WriteLine("Read fail - size mismatch");
+                return null;
+            }
+            Array.Copy(result, 2, ret, addr, dataLen);
+
+            addr += dataLen;
+            amount -= dataLen;
+        }
+        Console.WriteLine("Read complete!");
+        return ret;
+    }
+
+    internal void writeFlash(byte[] data, int adr, int len = -1)
+    {
+        if (len < 0)
+            len = data.Length;
+        int ofs = 0;
+        byte[] buffer = new byte[4096];
+        while (ofs < len)
+        {
+            int chunk = len - ofs;
+            if (chunk > 4092)
+                chunk = 4092;
+            buffer[0] = (byte)(adr & 0xFF);
+            buffer[1] = (byte)((adr >> 8) & 0xFF);
+            buffer[2] = (byte)((adr >> 16) & 0xFF);
+            buffer[3] = (byte)((adr >> 24) & 0xFF);
+            Array.Copy(data, ofs, buffer, 4, chunk);
+            int bufferLen = chunk + 4;
+            this.executeCommand(0x31, buffer, 0, bufferLen, true, 10);
+            ofs += chunk;
+        }
+    }
     void executeCommandChunked(int type, byte[] parms = null, int start = 0, int len = 0)
     {
         if(len == -1)

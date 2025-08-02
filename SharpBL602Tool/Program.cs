@@ -67,6 +67,14 @@ namespace BL602Tool
             //resync in eflash
             f.Sync();
             f.eraseFlash();
+            byte[] x = new byte[1024];
+            for(int i = 0; i < x.Length; i++)
+            {
+                x[i] = (byte)(i % 256);
+                // x[i] = (byte)(16);
+            }
+            f.writeFlash(x, 0);
+            byte [] res = f.readFlash(0,x.Length);
             if (bInfo)
             {
                 //BL602Flasher f = new BL602Flasher(port, 115200);
