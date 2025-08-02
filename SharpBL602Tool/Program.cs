@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.IO.Ports;
 using System.Threading;
+using static BL602Flasher;
 
 namespace BL602Tool
 {
@@ -60,7 +61,8 @@ namespace BL602Tool
             BL602Flasher f = new BL602Flasher();
             f.openPort(port, 115200);
             f.Sync();
-            f.getInfo();
+            BLInfo inf = f.getInfo();
+            inf.printBootInfo();
             if (bInfo)
             {
                 //BL602Flasher f = new BL602Flasher(port, 115200);
