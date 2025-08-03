@@ -235,6 +235,24 @@ class BL602Flasher
         Array.Copy(res, 6, v.remaining, 0, v.remaining.Length);
         return v;
     }
+    internal byte [] readFlashID()
+    {
+        byte[] res = executeCommand(0x36, null, 0, 0, true, 0.1f,6);
+        if (res == null)
+        {
+            return null;
+        }
+
+        if (res.Length >= 6)
+        {
+            Console.WriteLine("Flash ID: {0:X2}{1:X2}{2:X2}{3:X2}", res[2], res[3], res[4], res[5]);
+        }
+        else
+        {
+            Console.WriteLine("Invalid response length: " + res.Length);
+        }
+        return res;
+    }
     byte [] readFully()
     {
         byte[] r = new byte[_port.BytesToRead];

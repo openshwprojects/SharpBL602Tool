@@ -78,6 +78,7 @@ namespace BL602Tool
             f.loadAndRunPreprocessedImage(loaderBinary);
             //resync in eflash
             f.Sync();
+            f.readFlashID();
             if (bInfo)
             {
                 //BL602Flasher f = new BL602Flasher(port, 115200);
