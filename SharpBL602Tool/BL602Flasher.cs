@@ -269,8 +269,9 @@ class BL602Flasher
         }
         byte[] ret = null;
         int timeoutMS = (int)(timeout * 1000);
-#if false
-        while(timeoutMS > 0)
+#if true
+        Thread.Sleep(100);
+        while (timeoutMS > 0)
         {
             if (_port.BytesToRead >= 2)
             {
