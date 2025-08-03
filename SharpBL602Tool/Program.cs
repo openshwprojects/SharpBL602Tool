@@ -15,6 +15,7 @@ namespace BL602Tool
             string port = "COM3";
             string toWrite = "";
             string toRead = "";
+            int testLen = 12345;
             bool bErase = false;
             bool bInfo = false;
             bool bTest = false;
@@ -45,6 +46,11 @@ namespace BL602Tool
                 if (args[i] == "-t")
                 {
                     bTest = true;
+                }
+                if (args[i] == "-tl" && i + 1 < args.Length)
+                {
+                    bTest = true;
+                    testLen = int.Parse(args[++i]);
                 }
                 if (args[i] == "-i")
                 {
@@ -123,7 +129,7 @@ namespace BL602Tool
             {
                 Console.WriteLine("Will do erase/write/read test, erasing...");
                 f.eraseFlash();
-                byte[] x = new byte[1024];
+                byte[] x = new byte[testLen];
                 for (int i = 0; i < x.Length; i++)
                 {
                     x[i] = (byte)(i % 256);

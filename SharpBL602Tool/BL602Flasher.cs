@@ -72,7 +72,8 @@ class BL602Flasher
             cmdBuffer[7] = (byte)((length >> 24) & 0xFF);
 
             // executeCommand returns byte[]: response including at least 2 bytes header + length data
-            byte[] result = this.executeCommand(0x32, cmdBuffer, 0, cmdBuffer.Length, true, 100); 
+            int rawReplyLen = 2 + 2 + length; // OK + lenght 2 bytes + bytes
+            byte[] result = this.executeCommand(0x32, cmdBuffer, 0, cmdBuffer.Length, true, 100, rawReplyLen); 
 
             if (result == null)
             {
@@ -127,6 +128,7 @@ class BL602Flasher
             int bufferLen = chunk + 4;
             this.executeCommand(0x31, buffer, 0, bufferLen, true, 10);
             ofs += chunk;
+            adr += chunk;
         }
         Console.WriteLine("Done flash write " + len);
     }
@@ -175,22 +177,20 @@ class BL602Flasher
         for (int i = 0; i < syncRequest.Length; i++) syncRequest[i] = (byte)'U';
         _port.Write(syncRequest, 0, syncRequest.Length);
 
-        Thread.Sleep(100);
+        for(int i = 0; i < 500; i++)
+        {
+            Thread.Sleep(1);
 
-        // Check for 2-byte response
-        if (_port.BytesToRead >= 2)
-        {
-            byte[] response = new byte[2];
-            _port.Read(response, 0, 2);
-            if (response[0] == 'O' && response[1] == 'K')
+            // Check for 2-byte response
+            if (_port.BytesToRead >= 2)
             {
-                return true;
+                byte[] response = new byte[2];
+                _port.Read(response, 0, 2);
+                if (response[0] == 'O' && response[1] == 'K')
+                {
+                    return true;
+                }
             }
-        }
-        else
-        {
-            byte[] leftovers = new byte[Math.Min(_port.BytesToRead, 1024)];
-            _port.Read(leftovers, 0, leftovers.Length);
         }
 
         return false;
@@ -243,7 +243,7 @@ class BL602Flasher
     }
     byte[] executeCommand(int type, byte [] parms = null, 
         int start = 0, int len = 0, bool bChecksum = false,
-        float timeout = 0.1f)
+        float timeout = 0.1f, int expectedReplyLen = 2)
     {
         if(len < 0)
         {
@@ -269,11 +269,11 @@ class BL602Flasher
         }
         byte[] ret = null;
         int timeoutMS = (int)(timeout * 1000);
-#if true
+#if false
         Thread.Sleep(100);
         while (timeoutMS > 0)
         {
-            if (_port.BytesToRead >= 2)
+            if (_port.BytesToRead >= expectedReplyLen)
             {
                 break;
             }
@@ -285,7 +285,7 @@ class BL602Flasher
         Stopwatch sw = Stopwatch.StartNew();
         while (sw.ElapsedMilliseconds < timeoutMS)
         {
-            if (_port.BytesToRead >= 2)
+            if (_port.BytesToRead >= expectedReplyLen)
                 break;
         }
 #endif
