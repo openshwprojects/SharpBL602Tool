@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <StartArguments>-b 200000 -p COM3 -wf full_binary_with_app_OpenBL602_1.18.57.bin</StartArguments>
+  </PropertyGroup>
+</Project>

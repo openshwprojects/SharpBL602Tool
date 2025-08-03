@@ -1,0 +1,1 @@
+SharpBL602Tool.exe -p COM3 -wf dump_2mb.bin

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
 using System.Threading;
@@ -13,7 +14,7 @@ class BL602Flasher
         try
         {
             Console.WriteLine("Opening port " + portName + "...");
-            _port = new SerialPort(portName, 115200);
+            _port = new SerialPort(portName, baudRate);
             this.baudRate = baudRate;
             _port.Open();
             _port.DiscardInBuffer();
@@ -71,7 +72,7 @@ class BL602Flasher
             cmdBuffer[7] = (byte)((length >> 24) & 0xFF);
 
             // executeCommand returns byte[]: response including at least 2 bytes header + length data
-            byte[] result = this.executeCommand(0x32, cmdBuffer, 0, cmdBuffer.Length, true, 100); // Assuming 0x30 is flash_read cmd code
+            byte[] result = this.executeCommand(0x32, cmdBuffer, 0, cmdBuffer.Length, true, 100); 
 
             if (result == null)
             {
@@ -94,14 +95,27 @@ class BL602Flasher
         return ret;
     }
 
+    internal BLInfo getAndPrintInfo()
+    {
+        BLInfo inf = this.getInfo();
+        if(inf == null)
+        {
+            return null;
+        }
+        inf.printBootInfo();
+        return inf;
+    }
+
     internal void writeFlash(byte[] data, int adr, int len = -1)
     {
         if (len < 0)
             len = data.Length;
         int ofs = 0;
+        Console.WriteLine("Starting flash write " + len);
         byte[] buffer = new byte[4096];
         while (ofs < len)
         {
+            Console.Write("." + ofs + ".");
             int chunk = len - ofs;
             if (chunk > 4092)
                 chunk = 4092;
@@ -114,6 +128,7 @@ class BL602Flasher
             this.executeCommand(0x31, buffer, 0, bufferLen, true, 10);
             ofs += chunk;
         }
+        Console.WriteLine("Done flash write " + len);
     }
     void executeCommandChunked(int type, byte[] parms = null, int start = 0, int len = 0)
     {
@@ -205,6 +220,10 @@ class BL602Flasher
     internal BLInfo getInfo()
     {
         byte [] res = executeCommand(0x10, null);
+        if(res == null)
+        {
+            return null;
+        }
         int len = res[0] + (res[1] << 8);
         if(len + 2 != res.Length)
         {
@@ -250,23 +269,32 @@ class BL602Flasher
         }
         byte[] ret = null;
         int timeoutMS = (int)(timeout * 1000);
+#if false
         while(timeoutMS > 0)
         {
-            int step = 500;
-            Thread.Sleep(step);
             if (_port.BytesToRead >= 2)
             {
                 break;
             }
+            int step = 5;
+            Thread.Sleep(step);
             timeoutMS -= step;
         }
-        if(_port.BytesToRead >= 2)
+#else
+        Stopwatch sw = Stopwatch.StartNew();
+        while (sw.ElapsedMilliseconds < timeoutMS)
+        {
+            if (_port.BytesToRead >= 2)
+                break;
+        }
+#endif
+        if (_port.BytesToRead >= 2)
         {
             byte[] rep = new byte[2];
             _port.Read(rep, 0, 2);
             if(rep[0] == 'O' && rep[1] == 'K')
             {
-                Console.WriteLine("Command ok!");
+               // Console.Write(".ok.");
                 ret = readFully();
                 return ret;
             }

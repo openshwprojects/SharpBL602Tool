@@ -1,0 +1,1 @@
+SharpBL602Tool.exe -p COM3 -t
