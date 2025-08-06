@@ -15,6 +15,8 @@ namespace BL602Tool
             string port = "COM3";
             string toWrite = "";
             string toRead = "";
+            string toInfo = "";
+            toInfo = "Axus_eWeLink_3G_Switch_SDV-002_V1.2_(FWSW-HSBL602-SWITCH-BL602L_v1.3.3).bin";
             int testLen = 12345;
             bool bErase = false;
             bool bInfo = false;
@@ -52,9 +54,9 @@ namespace BL602Tool
                     bTest = true;
                     testLen = int.Parse(args[++i]);
                 }
-                if (args[i] == "-i")
+                if (args[i] == "-i" && i + 1 < args.Length)
                 {
-                    bInfo = true;
+                    toInfo = args[++i];
                 }
                 if (args[i] == "-rf" && i + 2 < args.Length)
                 {
@@ -79,15 +81,6 @@ namespace BL602Tool
             //resync in eflash
             f.Sync();
             f.readFlashID();
-            if (bInfo)
-            {
-                //BL602Flasher f = new BL602Flasher(port, 115200);
-                //f.upload_ram_loader("BL602_RAM_BIN.bin");
-                //f.flash_info();
-                //f.get_mac_in_otp();
-                //f.get_mac_local();
-                //Console.WriteLine("Info done!");
-            }
             // toWrite = "Axus_eWeLink_3G_Switch_SDV-002_V1.2_(FWSW-HSBL602-SWITCH-BL602L_v1.3.3).bin";
             //toRead = "full_binary_with_app_OpenBL602_1.18.57.bin";
             //readSize = 1024;
@@ -102,6 +95,10 @@ namespace BL602Tool
                 }
                 else
                     Console.WriteLine("Dump failed!");
+            }
+            if (toInfo.Length > 0)
+            {
+                BLHeaderReader.Read(toInfo);
             }
             if(bErase)
             {
