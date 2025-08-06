@@ -16,7 +16,6 @@ namespace BL602Tool
             string toWrite = "";
             string toRead = "";
             string toInfo = "";
-            toInfo = "Axus_eWeLink_3G_Switch_SDV-002_V1.2_(FWSW-HSBL602-SWITCH-BL602L_v1.3.3).bin";
             int testLen = 12345;
             bool bErase = false;
             bool bInfo = false;
@@ -67,6 +66,11 @@ namespace BL602Tool
                     toRead = args[i];
                 }
             }
+            if (toInfo.Length > 0)
+            {
+                BLHeaderReader.Read(toInfo);
+                return;
+            }
             BL602Flasher f = new BL602Flasher();
             f.openPort(port, baud);
             f.Sync();
@@ -95,10 +99,6 @@ namespace BL602Tool
                 }
                 else
                     Console.WriteLine("Dump failed!");
-            }
-            if (toInfo.Length > 0)
-            {
-                BLHeaderReader.Read(toInfo);
             }
             if(bErase)
             {
